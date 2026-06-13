@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { getFile, putFile } from "@/lib/github";
+import { getFile, putFile, getRepoMeta } from "@/lib/github";
 import { mergeIndex } from "@/lib/template";
 
 export const runtime = "nodejs";
@@ -49,6 +49,15 @@ export async function POST(req: Request) {
   const token = session.token;
 
   try {
+    // 0) 레포 존재 확인 (없으면 명확한 안내)
+    const meta = await getRepoMeta(token, owner, repo);
+    if (!meta.exists) {
+      return NextResponse.json(
+        { error: "no_repo", message: `${owner}/${repo} 레포가 없습니다. '레포 확인 → 생성' 후 다시 시도하세요.` },
+        { status: 404 }
+      );
+    }
+
     // 1) README.md
     const existingReadme = await getFile(token, owner, repo, b.filePath, branch);
     if (existingReadme && !b.overwrite) {

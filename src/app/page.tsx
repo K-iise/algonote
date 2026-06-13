@@ -74,6 +74,12 @@ export default function Home() {
   const [commitError, setCommitError] = useState<string | null>(null);
   const [needOverwrite, setNeedOverwrite] = useState(false);
 
+  // 레포 존재 확인 / 생성
+  type RepoStatus = "unknown" | "checking" | "exists" | "missing" | "creating";
+  const [repoStatus, setRepoStatus] = useState<RepoStatus>("unknown");
+  const [repoPrivate, setRepoPrivate] = useState(false);
+  const [repoMsg, setRepoMsg] = useState<string | null>(null);
+
   // 마운트 시: 로그인 상태 조회 + 레포 설정 복원
   useEffect(() => {
     fetch("/api/auth/me")
@@ -216,6 +222,51 @@ export default function Home() {
     setCommitResult(null);
   }
 
+  async function checkRepo() {
+    if (!owner.trim() || !repo.trim()) return;
+    setRepoStatus("checking");
+    setRepoMsg(null);
+    try {
+      const res = await fetch("/api/repo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ owner: owner.trim(), repo: repo.trim() }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "확인 실패");
+      if (d.exists) {
+        setRepoStatus("exists");
+        if (d.defaultBranch) setBranch(d.defaultBranch);
+        setRepoMsg(d.permissionPush === false ? "⚠ 이 레포에 푸시 권한이 없습니다." : null);
+      } else {
+        setRepoStatus("missing");
+      }
+    } catch (e) {
+      setRepoStatus("unknown");
+      setRepoMsg(e instanceof Error ? e.message : "오류");
+    }
+  }
+
+  async function createRepository() {
+    setRepoStatus("creating");
+    setRepoMsg(null);
+    try {
+      const res = await fetch("/api/repo/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ owner: owner.trim(), repo: repo.trim(), private: repoPrivate }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "생성 실패");
+      setRepoStatus("exists");
+      if (d.defaultBranch) setBranch(d.defaultBranch);
+      setRepoMsg("✓ 레포를 새로 만들었습니다.");
+    } catch (e) {
+      setRepoStatus("missing");
+      setRepoMsg(e instanceof Error ? e.message : "오류");
+    }
+  }
+
   async function commit(overwrite = false) {
     setCommitting(true);
     setCommitError(null);
@@ -243,7 +294,7 @@ export default function Home() {
         return;
       }
       if (!res.ok) {
-        throw new Error(data.error || "커밋 실패");
+        throw new Error(data.message || data.error || "커밋 실패");
       }
       setCommitResult(data);
     } catch (e) {
@@ -520,7 +571,10 @@ export default function Home() {
                       <input
                         type="text"
                         value={owner}
-                        onChange={(e) => setOwner(e.target.value)}
+                        onChange={(e) => {
+                          setOwner(e.target.value);
+                          setRepoStatus("unknown");
+                        }}
                         placeholder="내 GitHub 아이디"
                       />
                     </div>
@@ -529,7 +583,10 @@ export default function Home() {
                       <input
                         type="text"
                         value={repo}
-                        onChange={(e) => setRepo(e.target.value)}
+                        onChange={(e) => {
+                          setRepo(e.target.value);
+                          setRepoStatus("unknown");
+                        }}
                         placeholder="my-algorithm-notes"
                       />
                     </div>
@@ -543,6 +600,56 @@ export default function Home() {
                       />
                     </div>
                   </div>
+
+                  {/* 레포 존재 확인 / 자동 생성 */}
+                  <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <button
+                      className="ghost small"
+                      onClick={checkRepo}
+                      disabled={!owner.trim() || !repo.trim() || repoStatus === "checking"}
+                    >
+                      {repoStatus === "checking" ? <span className="spinner" /> : null}
+                      레포 확인
+                    </button>
+
+                    {repoStatus === "exists" && (
+                      <span className="ok" style={{ fontSize: 12 }}>
+                        ✓ 레포 확인됨 (branch: {branch})
+                      </span>
+                    )}
+
+                    {(repoStatus === "missing" || repoStatus === "creating") && (
+                      <>
+                        <span style={{ fontSize: 12, color: "var(--yellow)" }}>
+                          레포가 없어요 — 새로 만들까요?
+                        </span>
+                        <label
+                          style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, margin: 0, cursor: "pointer" }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={repoPrivate}
+                            onChange={(e) => setRepoPrivate(e.target.checked)}
+                            style={{ width: "auto" }}
+                          />
+                          Private
+                        </label>
+                        <button
+                          className="ghost small"
+                          onClick={createRepository}
+                          disabled={repoStatus === "creating"}
+                        >
+                          {repoStatus === "creating" ? <span className="spinner" /> : null}
+                          레포 생성
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {repoMsg && (
+                    <div className="hint" style={{ marginTop: 4 }}>
+                      {repoMsg}
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -133,6 +133,38 @@ export async function getRepoMeta(
   };
 }
 
+/**
+ * 레포 생성. owner 가 로그인 사용자면 /user/repos, 아니면 /orgs/{owner}/repos.
+ * auto_init: true 로 초기 커밋(README)을 만들어 기본 브랜치(main)가 생기게 한다
+ * — 그래야 이후 contents API 커밋이 바로 동작한다.
+ */
+export async function createRepo(
+  token: string,
+  params: { owner: string; repo: string; private: boolean; login: string }
+): Promise<{ fullName: string; defaultBranch: string; htmlUrl: string }> {
+  const isOrg = params.owner && params.owner !== params.login;
+  const path = isOrg ? `/orgs/${params.owner}/repos` : `/user/repos`;
+  const res = await gh(token, path, {
+    method: "POST",
+    body: JSON.stringify({
+      name: params.repo,
+      private: params.private,
+      auto_init: true,
+      description: "AlgoNote 알고리즘 풀이 기록",
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`레포 생성 실패: ${res.status} ${err.message ?? ""}`);
+  }
+  const data = await res.json();
+  return {
+    fullName: data.full_name,
+    defaultBranch: data.default_branch ?? "main",
+    htmlUrl: data.html_url,
+  };
+}
+
 /** 경로 세그먼트별 인코딩 (슬래시는 유지, 한글/공백 등만 인코딩) */
 function encodePath(path: string): string {
   return path
