@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "AlgoNote Capture",
+  "version": "0.1.0",
+  "description": "프로그래머스 문제와 정답 코드를 캡처해 AlgoNote 에디터로 보냅니다.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "*://school.programmers.co.kr/*",
+    "*://programmers.co.kr/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://school.programmers.co.kr/learn/courses/30/lessons/*",
+        "*://programmers.co.kr/learn/courses/30/lessons/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["inject.js"],
+      "matches": ["*://*.programmers.co.kr/*"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AlgoNote Capture"
+  }
+}
