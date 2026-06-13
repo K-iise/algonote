@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import CodeEditor from "@/components/CodeEditor";
 import Toggle from "@/components/Toggle";
+import Dashboard from "@/components/Dashboard";
 import type { Level, ParsedProblem, SolutionDraft } from "@/lib/types";
 import { buildArtifact, buildIndexPreview } from "@/lib/template";
 import { extractLessonNumber, isProgrammersUrl } from "@/lib/parser";
@@ -63,6 +64,7 @@ export default function Home() {
   const [aiLoading, setAiLoading] = useState(false);
 
   const [tab, setTab] = useState<PreviewTab>("readme");
+  const [view, setView] = useState<"editor" | "dashboard">("editor");
 
   // --- GitHub 연동 상태 ---
   const [user, setUser] = useState<GitHubUser | null>(null);
@@ -311,9 +313,29 @@ export default function Home() {
           <span className="logo">Algo</span>Note
         </h1>
         <span className="tagline">프로그래머스 풀이 → 마크다운 → GitHub 기록 자동화</span>
-        <span className="mock-badge">Phase 2 · GitHub OAuth 커밋</span>
+        <span className="view-nav">
+          <button
+            className={view === "editor" ? "active" : ""}
+            onClick={() => setView("editor")}
+          >
+            ✍️ 기록
+          </button>
+          <button
+            className={view === "dashboard" ? "active" : ""}
+            onClick={() => setView("dashboard")}
+          >
+            📊 내 기록
+          </button>
+        </span>
       </header>
 
+      {view === "dashboard" && (
+        <section className="card">
+          <Dashboard owner={owner} repo={repo} branch={branch} loggedIn={!!user} />
+        </section>
+      )}
+
+      {view === "editor" && (
       <div className="grid">
         {/* ===== 왼쪽: 입력 / 에디터 ===== */}
         <div>
@@ -718,6 +740,7 @@ export default function Home() {
           </section>
         </div>
       </div>
+      )}
     </div>
   );
 }
