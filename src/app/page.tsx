@@ -199,8 +199,10 @@ export default function Home() {
   // --- 산출물 계산 ---
   const artifact = useMemo(() => {
     const p = { ...problem, level: draft.level };
-    return buildArtifact(p, draft);
-  }, [problem, draft]);
+    // AI 힌트는 토글이 켜져 있을 때만 README 에 포함 (끄면 미리보기/커밋에서 제외)
+    const d = aiEnabled ? draft : { ...draft, aiHint: "" };
+    return buildArtifact(p, d);
+  }, [problem, draft, aiEnabled]);
 
   const indexPreview = useMemo(
     () => buildIndexPreview(artifact.indexRow),
