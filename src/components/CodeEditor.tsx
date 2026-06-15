@@ -23,7 +23,7 @@ export default function CodeEditor({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        theme="dark"
+        theme="light"
         extensions={[java()]}
         minHeight={minHeight}
         basicSetup={{
