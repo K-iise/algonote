@@ -62,6 +62,7 @@ export default function Home() {
 
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const [tab, setTab] = useState<PreviewTab>("readme");
   const [view, setView] = useState<"editor" | "dashboard">("editor");
@@ -178,6 +179,7 @@ export default function Home() {
   // --- AI 힌트 가져오기 ---
   async function fetchAiHint() {
     setAiLoading(true);
+    setAiError(null);
     try {
       const res = await fetch("/api/ai-hint", {
         method: "POST",
@@ -185,7 +187,10 @@ export default function Home() {
         body: JSON.stringify({ title: problem.title, description: problem.description }),
       });
       const data = await res.json();
-      if (res.ok) setD({ aiHint: data.hint });
+      if (!res.ok) throw new Error(data.error || "AI 힌트 요청 실패");
+      setD({ aiHint: data.hint });
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "AI 힌트 오류");
     } finally {
       setAiLoading(false);
     }
@@ -491,9 +496,8 @@ export default function Home() {
                       {aiLoading ? <span className="spinner" /> : null}
                       힌트 생성
                     </button>
-                    <div className="hint">
-                      정답 코드 대신 방향만 제시합니다. (MVP: mock 응답)
-                    </div>
+                    <div className="hint">정답 코드 대신 방향만 제시합니다.</div>
+                    {aiError && <div className="error">{aiError}</div>}
                     {draft.aiHint && (
                       <div className="preview" style={{ marginTop: 12, maxHeight: 240 }}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
