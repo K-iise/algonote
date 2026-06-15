@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { IndexRow, DashboardStats } from "@/lib/dashboard";
+import { recommend } from "@/lib/recommend";
 
 interface Props {
   owner: string;
@@ -80,6 +81,8 @@ export default function Dashboard({ owner, repo, branch, loggedIn }: Props) {
   useEffect(() => {
     if (loggedIn && owner.trim() && repo.trim()) load();
   }, [loggedIn, owner, repo, branch, load]);
+
+  const recs = useMemo(() => (data ? recommend(data.rows, 4) : []), [data]);
 
   if (!loggedIn) {
     return <div className="hint">GitHub 로그인 후 내 기록을 볼 수 있어요.</div>;
@@ -174,6 +177,30 @@ export default function Dashboard({ owner, repo, branch, loggedIn }: Props) {
               })}
           </div>
         </>
+      )}
+
+      {data && recs.length > 0 && (
+        <div className="rec-section">
+          <h3 className="rec-title">🎯 다음에 풀어볼 문제</h3>
+          <div className="rec-grid">
+            {recs.map((r) => (
+              <a
+                key={r.number}
+                className="rec-card"
+                href={r.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <div className="rec-head">
+                  <span className={`level-chip ${r.level}`}>{r.level}</span>
+                  <span className="rec-tag">{r.tag}</span>
+                </div>
+                <div className="rec-name">{r.title}</div>
+                <div className="rec-reason">{r.reason}</div>
+              </a>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

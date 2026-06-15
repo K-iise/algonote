@@ -585,6 +585,69 @@ button.small {
   flex: 1;
 }
 
+/* ===== 추천 문제 ===== */
+.rec-section {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid var(--g100);
+}
+.rec-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: var(--g900);
+}
+.rec-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+@media (max-width: 600px) {
+  .rec-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.rec-card {
+  display: block;
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--g900);
+  transition: background 0.12s, transform 0.05s;
+}
+.rec-card:hover {
+  background: var(--blue-bg);
+  text-decoration: none;
+}
+.rec-card:active {
+  transform: scale(0.99);
+}
+.rec-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.rec-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--g500);
+  background: var(--g100);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.rec-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--g900);
+}
+.rec-reason {
+  font-size: 12px;
+  color: var(--g500);
+  margin-top: 3px;
+}
+
 /* ===== 스피너 ===== */
 .spinner {
   display: inline-block;
