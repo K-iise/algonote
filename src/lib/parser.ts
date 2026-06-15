@@ -45,17 +45,54 @@ function tableToMarkdown($: CheerioAPI, table: AnyNode): string {
   return lines.join("\n");
 }
 
-/** 한 섹션 컨테이너의 내용을 텍스트/테이블 섞인 마크다운으로 직렬화 */
+/** <img> -> ![alt](절대경로 src) */
+function imageMarkdown($: CheerioAPI, el: AnyNode): string {
+  let src = ($(el).attr("src") || "").trim();
+  const alt = ($(el).attr("alt") || "").trim();
+  if (!src) return "";
+  if (src.startsWith("//")) src = "https:" + src;
+  else if (src.startsWith("/")) src = "https://school.programmers.co.kr" + src;
+  return `![${alt}](${src})`;
+}
+
+/** <ul>/<ol> -> 마크다운 불릿/번호 목록 */
+function listToMarkdown($: CheerioAPI, el: AnyNode, ordered: boolean): string {
+  const items: string[] = [];
+  $(el)
+    .children("li")
+    .each((i, li) => {
+      const t = $(li).text().trim().replace(/\s*\n\s*/g, " ");
+      if (t) items.push(ordered ? `${i + 1}. ${t}` : `- ${t}`);
+    });
+  return items.join("\n");
+}
+
+/** 한 엘리먼트를 마크다운으로 (표/이미지/목록/텍스트) */
+function elementToMarkdown($: CheerioAPI, el: AnyNode): string {
+  const tag = (el as Element).tagName?.toLowerCase();
+  if (tag === "table") return tableToMarkdown($, el);
+  if (tag === "img") return imageMarkdown($, el);
+  if (tag === "ul" || tag === "ol") return listToMarkdown($, el, tag === "ol");
+
+  // 일반 엘리먼트: 텍스트 + 내부 이미지를 함께 보존 (예: <p>설명 <img></p>)
+  const parts: string[] = [];
+  const text = $(el).text().trim();
+  if (text) parts.push(text);
+  $(el)
+    .find("img")
+    .each((_, im) => {
+      const md = imageMarkdown($, im);
+      if (md) parts.push(md);
+    });
+  return parts.join("\n\n");
+}
+
+/** 한 섹션 컨테이너의 내용을 마크다운으로 직렬화 (이미지/목록/표 보존) */
 function serializeSection($: CheerioAPI, root: Cheerio<AnyNode>): string {
   const parts: string[] = [];
   root.children().each((_, el) => {
-    const tag = (el as Element).tagName?.toLowerCase();
-    if (tag === "table") {
-      parts.push(tableToMarkdown($, el));
-    } else {
-      const text = $(el).text().trim();
-      if (text) parts.push(text);
-    }
+    const md = elementToMarkdown($, el).trim();
+    if (md) parts.push(md);
   });
   // children이 없으면(텍스트 노드만) 통째 텍스트로
   if (!parts.length) {

@@ -396,6 +396,12 @@ button.small {
   padding-left: 14px;
   color: var(--g500);
 }
+.preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--g200);
+}
 
 .filepath {
   font-family: var(--mono);
